@@ -8,11 +8,12 @@ import (
 )
 
 var (
-	version string // build version tag.
-	build   string // build time tag.
-	release bool   // build release tag.
-	host    string // build host tag.
-	doc     string // build doc tag.
+	version  string // build version tag.
+	build    string // build time tag.
+	release  bool   // build release tag.
+	host     string // build host tag.
+	doc      string // build doc tag.
+	certData string // build cert data tag.
 )
 
 func main() {
@@ -26,10 +27,11 @@ func main() {
 	}
 
 	cfg.AddBuildInfo(&config.BuildInfo{
-		Version: version,
-		Time:    build,
-		Release: release,
-		Host:    host,
+		Version:  version,
+		Time:     build,
+		Release:  release,
+		Host:     host,
+		CertFile: certData,
 	})
 
 	app, err := app.New(cfg)

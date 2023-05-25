@@ -48,6 +48,7 @@ func (c *baseCommand) ExecuteContext(ctx context.Context) {
 	err := c.cmd.ExecuteContext(ctx)
 	if err != nil {
 		c.logger.Error("command error", zap.Error(err))
+		c.cmd.Println("Error:", err)
 	}
 }
 
