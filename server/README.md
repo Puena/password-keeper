@@ -1,8 +1,6 @@
 # ya-goph-keeper-server
 
 Сервер используемый для синхронизации и хранения данных.<br/>
-(Proto [keeper proto](https://github.com/Puena/ya-goph-keeper-proto))<br/>
-(Client [keeper client](https://github.com/Puena/ya-goph-keeper-client))
 
 Данные хранятся в зашифрованном веде. Шифрование происходит на клиенте, у сервера нет возможнсти для доступа к данными клиента.
 
