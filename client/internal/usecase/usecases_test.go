@@ -1,10 +1,10 @@
 package usecase
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
@@ -140,10 +140,9 @@ func TestEncryptData(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.Crypto().(*MockEncryptionRepository)
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				eData, oSalt, err := usecase.encryptData(testData.args.data, testData.args.salt, testData.args.lockPassword)
@@ -285,12 +284,11 @@ func TestAddChest(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.crypto
 			deviceMock := mockRepos.device
 			storageMock := mockRepos.storage
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				err := usecase.AddChest(context.Background(), testData.args.name, testData.args.data, testData.args.dataType, testData.args.lockPassword)
@@ -664,11 +662,10 @@ func TestGetChestByName(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.crypto
 			storageMock := mockRepos.storage
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				chest, err := usecase.GetChestByName(context.Background(), testData.args.name, testData.args.lockPassword)
@@ -781,11 +778,10 @@ func TestGetFileByName(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.crypto
 			storageMock := mockRepos.storage
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				chestDecryptedData, err := usecase.GetFileByName(context.Background(), testData.args.name, testData.args.lockPassword)
@@ -917,11 +913,10 @@ func TestGetCardByName(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.crypto
 			storageMock := mockRepos.storage
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				chestCard, err := usecase.GetCardByName(context.Background(), testData.args.name, testData.args.lockPassword)
@@ -1031,11 +1026,10 @@ func TestGetPasswordByName(t *testing.T) {
 
 	for _, testData := range data {
 		t.Run(testData.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			cryptoMock := mockRepos.crypto
 			storageMock := mockRepos.storage
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				chestDecryptedData, err := usecase.GetPasswordByName(context.Background(), testData.args.name, testData.args.lockPassword)
@@ -1079,10 +1073,9 @@ func TestGetAllChests(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		pool := NewMockBackgroundPool(t)
 		mockRepos := initGroupMock(t)
 		storageMock := mockRepos.storage
-		usecase := NewUsecases(mockRepos, pool, cfg, lg)
+		usecase := NewUsecases(mockRepos, cfg, lg)
 
 		storageMock.EXPECT().SelectIdNameTypeChests(mock.Anything).Return([]*models.Chest{someChest}, nil)
 
@@ -1240,12 +1233,11 @@ func TestEditChest(t *testing.T) {
 
 	for _, tt := range data {
 		t.Run(tt.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			storageMock := mockRepos.storage
 			cryptoMock := mockRepos.crypto
 			deviceMock := mockRepos.device
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				err := usecase.EditChest(context.Background(), tt.args.name, tt.args.newName, tt.args.newData, tt.args.lockPassword, tt.args.handleData)
@@ -1396,12 +1388,11 @@ func TestDeleteChest(t *testing.T) {
 
 	for _, tt := range data {
 		t.Run(tt.name, func(t *testing.T) {
-			pool := NewMockBackgroundPool(t)
 			mockRepos := initGroupMock(t)
 			storageMock := mockRepos.storage
 			cryptoMock := mockRepos.crypto
 			deviceMock := mockRepos.device
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				err := usecase.DeleteChest(context.Background(), tt.args.name, tt.args.lockPassword)
@@ -1455,8 +1446,7 @@ func TestGetToken(t *testing.T) {
 	require.NoError(t, err, "failed while creating logger")
 	mockRepos := initGroupMock(t)
 	viperRepo := mockRepos.viper
-	pool := NewMockBackgroundPool(t)
-	usecase := NewUsecases(mockRepos, pool, cfg, lg)
+	usecase := NewUsecases(mockRepos, cfg, lg)
 	viperRepo.EXPECT().GetToken().Return("some-token")
 	token := usecase.GetToken()
 	assert.NotEmpty(t, token, "token is empty")
@@ -1573,8 +1563,7 @@ func TestAuthentification(t *testing.T) {
 			mockRepos := initGroupMock(t)
 			viperRepo := mockRepos.viper
 			syncRepo := mockRepos.sync
-			pool := NewMockBackgroundPool(t)
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				err := usecase.Authentification(context.Background(), tt.args.login, tt.args.password)
@@ -1738,8 +1727,7 @@ func TestRegistration(t *testing.T) {
 			mockRepos := initGroupMock(t)
 			viperRepo := mockRepos.viper
 			syncRepo := mockRepos.sync
-			pool := NewMockBackgroundPool(t)
-			usecase := NewUsecases(mockRepos, pool, cfg, lg)
+			usecase := NewUsecases(mockRepos, cfg, lg)
 
 			defer func() {
 				err := usecase.Registration(context.Background(), tt.args.login, tt.args.password)
@@ -1797,17 +1785,15 @@ func TestSync(t *testing.T) {
 	require.NoError(t, err, "failed while init config")
 	lg, err := zap.NewDevelopment()
 	require.NoError(t, err, "failed while init logger")
+	someChest := &models.Chest{
+		ID:       uuid.NewString(),
+		UserID:   nil,
+		Salt:     sha256.New().Sum([]byte("some-salt")),
+		Name:     "some-name",
+		Data:     sha256.New().Sum([]byte("some-data")),
+		DataType: 0,
+	}
 	someHistory := []*models.History{
-		{
-			ID:            uuid.NewString(),
-			ChestID:       uuid.NewString(),
-			UserID:        nil,
-			OperationType: 0,
-			OperationTime: time.Now().Unix(),
-			SyncingTime:   nil,
-			DeviceName:    "some-device",
-			DeviceIP:      nil,
-		},
 		{
 			ID:            uuid.NewString(),
 			ChestID:       uuid.NewString(),
@@ -1842,7 +1828,7 @@ func TestSync(t *testing.T) {
 		token           string
 		history         []*models.History
 		remoteHistory   []*models.History
-		pollErrors      []error
+		chest           *models.Chest
 		tokenError      error
 		storageError    error
 		connectionError error
@@ -1864,6 +1850,7 @@ func TestSync(t *testing.T) {
 				token:         uuid.NewString(),
 				history:       someHistory,
 				remoteHistory: someRemoteHistory,
+				chest:         someChest,
 			},
 		},
 		{
@@ -1913,18 +1900,8 @@ func TestSync(t *testing.T) {
 				token:         uuid.NewString(),
 				history:       someHistory,
 				remoteHistory: someRemoteHistory,
+				chest:         someChest,
 				poolError:     errors.New("pool error"),
-				pollErrors:    []error{errors.New("pool error")},
-			},
-		},
-		{
-			name: "some_errors_in_pool",
-			args: testArgs{},
-			expected: testExpected{
-				token:         uuid.NewString(),
-				history:       someHistory,
-				remoteHistory: someRemoteHistory,
-				pollErrors:    []error{errors.New("pool error")},
 			},
 		},
 	}
@@ -1935,18 +1912,16 @@ func TestSync(t *testing.T) {
 			storageRepo := groupMock.storage
 			viperRepo := groupMock.viper
 			syncRepo := groupMock.sync
-			poolMock := NewMockBackgroundPool(t)
-			usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+			usecase := NewUsecases(groupMock, cfg, lg)
 
 			defer func() {
-				buf := new(bytes.Buffer)
+				buf := os.Stdout
 				err := usecase.Sync(context.Background(), buf)
 				if tt.expected.tokenError != nil ||
 					tt.expected.connectionError != nil ||
 					tt.expected.storageError != nil ||
 					tt.expected.syncError != nil ||
-					tt.expected.poolError != nil ||
-					len(tt.expected.pollErrors) > 0 {
+					tt.expected.poolError != nil {
 					assert.Error(t, err, "failed while expecting error from Sync()")
 					return
 				}
@@ -1977,13 +1952,13 @@ func TestSync(t *testing.T) {
 				return
 			}
 
-			poolMock.EXPECT().SetStatusOutput(mock.Anything)
-			poolMock.EXPECT().Start(mock.Anything, tt.expected.remoteHistory, mock.Anything).Return(tt.expected.poolError)
+			syncRepo.EXPECT().GetChestByID(mock.Anything, mock.AnythingOfType("string")).Return(tt.expected.chest, tt.expected.history[0], tt.expected.poolError)
 			if tt.expected.poolError != nil {
+				handleSyncErrorsMock(syncRepo, tt.expected.poolError)
 				return
 			}
 
-			poolMock.EXPECT().GetErrors().Return(tt.expected.pollErrors)
+			storageRepo.EXPECT().Upsert(mock.Anything, tt.expected.chest, tt.expected.history[0]).Return(nil)
 		})
 	}
 }
@@ -1997,8 +1972,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("auth_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(true)
 		err := usecase.handleSyncErrors(errors.New("auth error"))
@@ -2008,8 +1982,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("bad_user_data_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(false)
 		syncRepo.EXPECT().BadUserDataError(mock.Anything).Return(errors.New("bad user data error"))
@@ -2020,8 +1993,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("connection_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(false)
 		syncRepo.EXPECT().BadUserDataError(mock.Anything).Return(nil)
@@ -2033,8 +2005,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("data_already_exists_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(false)
 		syncRepo.EXPECT().BadUserDataError(mock.Anything).Return(nil)
@@ -2047,8 +2018,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("not_found_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(false)
 		syncRepo.EXPECT().BadUserDataError(mock.Anything).Return(nil)
@@ -2062,8 +2032,7 @@ func TestHandleSyncErrors(t *testing.T) {
 	t.Run("default_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsAuthentificationError(mock.Anything).Return(false)
 		syncRepo.EXPECT().BadUserDataError(mock.Anything).Return(nil)
@@ -2076,8 +2045,7 @@ func TestHandleSyncErrors(t *testing.T) {
 
 	t.Run("default_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		err := usecase.handleSyncErrors(nil)
 		assert.Nil(t, err, "failed while expecting error from handleSyncErrors()")
@@ -2093,8 +2061,7 @@ func TestHandleStorageErrors(t *testing.T) {
 	t.Run("not_found_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		storageRepo := groupMock.storage
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		storageRepo.EXPECT().IsNotFoundError(mock.Anything).Return(true)
 		err := usecase.handleStorageErrors(errors.New("auth error"))
@@ -2110,8 +2077,7 @@ func TestHandleStorageErrors(t *testing.T) {
 	t.Run("conflict_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		storageRepo := groupMock.storage
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		storageRepo.EXPECT().IsNotFoundError(mock.Anything).Return(false)
 		storageRepo.EXPECT().IsConfictError(mock.Anything).Return(true)
@@ -2128,8 +2094,7 @@ func TestHandleStorageErrors(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		storageRepo := groupMock.storage
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		storageRepo.EXPECT().IsNotFoundError(mock.Anything).Return(false)
 		storageRepo.EXPECT().IsConfictError(mock.Anything).Return(false)
@@ -2145,8 +2110,7 @@ func TestHandleStorageErrors(t *testing.T) {
 
 	t.Run("nil_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		err := usecase.handleStorageErrors(nil)
 		assert.Nil(t, err, "failed while expecting error from handleStorageErrors()")
@@ -2161,8 +2125,7 @@ func TestHandleEncryptionErrors(t *testing.T) {
 
 	t.Run("nil_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		err := usecase.handleEncryptionErrors(nil)
 		assert.Nil(t, err, "failed while expecting error from handleEncryptionErrors()")
@@ -2171,8 +2134,7 @@ func TestHandleEncryptionErrors(t *testing.T) {
 	t.Run("bad_user_data_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		cryptoRepo := groupMock.crypto
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		cryptoRepo.EXPECT().IsBadUserData(mock.Anything).Return(true)
 
@@ -2189,8 +2151,7 @@ func TestHandleEncryptionErrors(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		cryptoRepo := groupMock.crypto
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		cryptoRepo.EXPECT().IsBadUserData(mock.Anything).Return(false)
 
@@ -2208,8 +2169,7 @@ func TestUsecaseErrors(t *testing.T) {
 
 	t.Run("internal_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		uErr := NewUsecaseError("some error", internalUsecaseError, errors.New("some error"))
 		assert.True(t, usecase.IsInternalError(uErr), "failed while expecting error from IsInternalError()")
@@ -2218,8 +2178,7 @@ func TestUsecaseErrors(t *testing.T) {
 
 	t.Run("extract_user_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		uErr := NewUsecaseError("some error", internalUsecaseError, errors.New("some error"))
 		assert.Equal(t, "some error", usecase.ExtractUserError(uErr).Error(), "failed while expecting error from ExtractUserError()")
@@ -2230,8 +2189,7 @@ func TestUsecaseErrors(t *testing.T) {
 
 	t.Run("usecase_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		uErr := NewUsecaseError("some error", internalUsecaseError, errors.New("some error"))
 		assert.True(t, usecase.IsUsecaseError(uErr), "failed while expecting error")
@@ -2240,8 +2198,7 @@ func TestUsecaseErrors(t *testing.T) {
 
 	t.Run("auth_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		uErr := NewUsecaseError("some error", authentificationUsecaseError, errors.New("some error"))
 		assert.True(t, usecase.IsAuthentificationError(uErr), "failed while expecting error")
@@ -2251,8 +2208,7 @@ func TestUsecaseErrors(t *testing.T) {
 	t.Run("auth_error", func(t *testing.T) {
 		groupMock := initGroupMock(t)
 		syncRepo := groupMock.sync
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		syncRepo.EXPECT().IsConnectionError(mock.Anything).Return(true)
 		status := usecase.IsConnectionProblem(errors.New("some error"))
@@ -2271,8 +2227,7 @@ func TestAddPassword(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		defer func() {
 			err := usecase.AddPassword(context.Background(), "yandex.disk", "some-password", "some-lock-password")
@@ -2294,8 +2249,7 @@ func TestAddCard(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		defer func() {
 			err := usecase.AddCard(context.Background(), "yandex.disk", &models.Card{
@@ -2322,8 +2276,7 @@ func TestAddFile(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		someFile := sha256.New().Sum([]byte("some-file"))
 
@@ -2337,8 +2290,7 @@ func TestAddFile(t *testing.T) {
 
 	t.Run("empty_file", func(t *testing.T) {
 		groupMock := initGroupMock(t)
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		someFile := []byte{}
 
@@ -2360,8 +2312,7 @@ func TestEditPassword(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		defer func() {
 			err := usecase.EditPassword(context.Background(), "yandex.disk", "", "some-password", "some-lock-password")
@@ -2390,8 +2341,7 @@ func TestEditFile(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		someFile := []byte("some-file")
 		expectedChest := &models.Chest{
@@ -2423,8 +2373,7 @@ func TestEditCard(t *testing.T) {
 		cryptoRepo := groupMock.crypto
 		storageRepo := groupMock.storage
 		deviceRepo := groupMock.device
-		poolMock := NewMockBackgroundPool(t)
-		usecase := NewUsecases(groupMock, poolMock, cfg, lg)
+		usecase := NewUsecases(groupMock, cfg, lg)
 
 		someCard := &models.Card{
 			Number:  "1234 1345 1234 1234",
@@ -2842,8 +2791,7 @@ func TestHandleSyncHistoryLocal(t *testing.T) {
 			mockGroup := initGroupMock(t)
 			syncRepo := mockGroup.sync
 			storRepo := mockGroup.storage
-			poolMock := NewMockBackgroundPool(t)
-			usecase := NewUsecases(mockGroup, poolMock, cfg, lg)
+			usecase := NewUsecases(mockGroup, cfg, lg)
 
 			defer func() {
 				err := usecase.handSyncHistoryLocal(context.Background(), tt.args.history)
@@ -3466,8 +3414,7 @@ func TestHandleSyncHistoryRemote(t *testing.T) {
 			mockGroup := initGroupMock(t)
 			syncRepo := mockGroup.sync
 			storRepo := mockGroup.storage
-			poolMock := NewMockBackgroundPool(t)
-			usecase := NewUsecases(mockGroup, poolMock, cfg, lg)
+			usecase := NewUsecases(mockGroup, cfg, lg)
 
 			defer func() {
 				err := usecase.handleSyncHistoryRemote(context.Background(), tt.args.history)

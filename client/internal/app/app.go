@@ -9,7 +9,6 @@ import (
 	"github.com/Puena/password-keeper/client/internal/adapter"
 	"github.com/Puena/password-keeper/client/internal/command"
 	"github.com/Puena/password-keeper/client/internal/database"
-	"github.com/Puena/password-keeper/client/internal/pool"
 	"github.com/Puena/password-keeper/client/internal/repository"
 	"github.com/Puena/password-keeper/client/internal/usecase"
 	"github.com/fsnotify/fsnotify"
@@ -76,10 +75,8 @@ func New(config *config.Config) (*App, error) {
 		return nil, err
 	}
 
-	ctxPool := context.Background()
-	pool := pool.NewHistoryWorkerPool(ctxPool, config, logger)
 	repositories := repository.NewRepositories(db.GetDB(), viper.GetViper(), config, logger)
-	usecases := usecase.NewUsecases(adapter.NewUsecaesRepositoriesAdapter(repositories), pool, config, logger)
+	usecases := usecase.NewUsecases(adapter.NewUsecaesRepositoriesAdapter(repositories), config, logger)
 	rootCmd := command.NewRootCmd(usecases, config, logger).GetCommand()
 
 	return &App{

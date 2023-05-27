@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/Puena/password-keeper/client/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
 	"go.uber.org/zap"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -87,13 +89,6 @@ type SyncRepository interface {
 	IsDataAlreadyExistsError(err error) bool
 }
 
-//go:generate mockery --name BackgroundPool
-type BackgroundPool interface {
-	Start(context.Context, []*models.History, func(ctx context.Context, history *models.History) error) error
-	SetStatusOutput(io.Writer)
-	GetErrors() []error
-}
-
 type usecasesErrorType int
 
 const (
@@ -111,27 +106,28 @@ type usecasesError struct {
 }
 
 type usecases struct {
-	logger        *zap.Logger
-	config        *config.Config
-	backgrounPool BackgroundPool
-	viper         ViperRepository
-	encryption    EncryptionRepository
-	storage       StorageRepostiory
-	device        DeviceRepository
-	sync          SyncRepository
+	logger               *zap.Logger
+	config               *config.Config
+	viper                ViperRepository
+	encryption           EncryptionRepository
+	storage              StorageRepostiory
+	device               DeviceRepository
+	sync                 SyncRepository
+	backgroundTasksLimit int64
 }
 
 // NewUsecases create usecases.
-func NewUsecases(repositories UsecasesRepositories, pool BackgroundPool, config *config.Config, logger *zap.Logger) *usecases {
+func NewUsecases(repositories UsecasesRepositories, config *config.Config, logger *zap.Logger) *usecases {
+	vCfg, _ := config.ReadViperConfig()
 	return &usecases{
-		logger:        logger,
-		config:        config,
-		backgrounPool: pool,
-		viper:         repositories.Viper(),
-		encryption:    repositories.Crypto(),
-		storage:       repositories.Storage(),
-		device:        repositories.Device(),
-		sync:          repositories.Sync(),
+		logger:               logger,
+		config:               config,
+		viper:                repositories.Viper(),
+		encryption:           repositories.Crypto(),
+		storage:              repositories.Storage(),
+		device:               repositories.Device(),
+		sync:                 repositories.Sync(),
+		backgroundTasksLimit: int64(vCfg.BackgroundTasksLimit),
 	}
 }
 
@@ -360,19 +356,48 @@ func (c *usecases) Sync(ctx context.Context, statusOutput io.Writer) error {
 		return c.handleSyncErrors(err)
 	}
 
-	c.backgrounPool.SetStatusOutput(statusOutput)
-	err = c.backgrounPool.Start(ctx, remoteHistory, c.handleSyncHistory)
-	if err != nil {
-		return NewUsecaseError("failed while handle jobs in background pool", internalUsecaseError, err)
-	}
+	errs := c.backgroundTasks(ctx, remoteHistory, statusOutput)
 
-	backgroundErrors := c.backgrounPool.GetErrors()
-	for _, e := range backgroundErrors {
+	for _, e := range errs {
 		if e != nil {
 			err = errors.Join(e, err)
 		}
 	}
 	return err
+}
+
+func (c *usecases) backgroundTasks(ctx context.Context, history []*models.History, status io.Writer) []error {
+	var errors []error
+	var completed int64
+	total := len(history)
+	semo := semaphore.NewWeighted(c.backgroundTasksLimit)
+
+	for _, h := range history {
+		h := h
+		err := semo.Acquire(ctx, 1)
+		if err != nil {
+			errors = append(errors, NewUsecaseError("failed while do background task, try again later", internalUsecaseError, err))
+			break
+		}
+
+		go func() {
+			defer semo.Release(1)
+			err = c.handleSyncHistory(ctx, h)
+			if err != nil {
+				errors = append(errors, err)
+			}
+			done := atomic.AddInt64(&completed, 1)
+			status.Write([]byte(fmt.Sprintf("\rProcessed %d/%d ", done, total)))
+		}()
+	}
+	// wait for all tasks
+	err := semo.Acquire(ctx, c.backgroundTasksLimit)
+	if err != nil {
+		errors = append(errors, NewUsecaseError("failed while waiting background tasks, try again later", internalUsecaseError, err))
+	}
+	semo.Release(c.backgroundTasksLimit)
+
+	return errors
 }
 
 // GetToken return saved token, can return empty string.

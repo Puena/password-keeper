@@ -10,11 +10,11 @@ import (
 
 const (
 	// Flag for devault database path.
-	backgroundWorkersFlag = "BackgroundWorkers"
-	databasePathFlag      = "DatabasePath"
-	databaseDefaultPath   = "%s/.keeper/storage"
-	logPathFlag           = "LogPath"
-	logDefaultPath        = "%s/.keeper"
+	backgroundTasksLimitFlag = "BackgroundTasksLimit"
+	databasePathFlag         = "DatabasePath"
+	databaseDefaultPath      = "%s/.keeper/storage"
+	logPathFlag              = "LogPath"
+	logDefaultPath           = "%s/.keeper"
 )
 
 // Config represent app configuration.
@@ -42,10 +42,10 @@ type BuildInfo struct {
 }
 
 type viperConfig struct {
-	LogPath           string
-	BackgroundWorkers int
-	Login             string
-	DatabasePath      string
+	LogPath              string
+	BackgroundTasksLimit int
+	Login                string
+	DatabasePath         string
 }
 
 // ReadViperConfig read vipers config.
@@ -86,7 +86,7 @@ func (c *Config) loadConfig() error {
 		return fmt.Errorf("failed while create log patht folders %w", err)
 	}
 	viper.SetDefault(databasePathFlag, databasePath)
-	viper.SetDefault(backgroundWorkersFlag, 10)
+	viper.SetDefault(backgroundTasksLimitFlag, 10)
 	viper.SetDefault(logPathFlag, logPath)
 
 	viper.AddConfigPath(home)
