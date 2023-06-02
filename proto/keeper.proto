@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package keeper;
+
+option go_package = "github.com/Puena/password-keeper/proto";
+
+/*
+ * Represent the data required for user registration or authentification.
+ */
+message AuthDataRequest {
+    string login = 1;
+    string password = 2;
+  }
+
+/*
+ * Represent the data which client get after success registration or authentification.
+ */
+message AuthTokenResponse {
+    string token = 1;
+  }
+
+/*
+ * Represent chest data.
+ */
+message Chest {
+    string id = 1;
+    optional string user_id = 2;
+    bytes salt = 3;
+    string name = 4;
+    bytes data = 5;
+    int32 datat_type = 6;
+  }
+
+ /*
+ * Represent history data.
+ */ 
+message History {
+    string id = 1;
+    string chest_id = 2;
+    optional string user_id = 3;
+    int32 operation_type = 4;
+    int64 operation_time = 5;
+    optional int64 syncing_time = 6;
+    string device_name = 7;
+    optional string device_ip = 8;
+  }
+
+/*
+* Represent the transfered data when get chest by id.
+*/
+message ChestIDRequest {
+    string chest_id = 1;
+  }
+  
+  /*
+  * Represent cehst response.
+  */
+message ChestResponse {
+  Chest chest = 1;
+  History history = 2;
+}
+
+/*
+* Represent data for chest creation/modifing requests.
+*/
+message ChestRequest {
+  Chest chest = 1;
+  History history = 2;
+}
+
+/*
+* Represent delete chest request.
+*/
+message DeleteChestRequest {
+  History history = 1;
+}
+
+/*
+* Represent respose as history event.
+*/
+message HistoryResponse {
+  History history = 1;
+}
+
+/*
+* Represent sync request that contatins list of history events.
+*/
+message SyncRequest {
+  repeated History history = 1; 
+}
+
+/*
+* Represent sync response that contatins list of history events.
+*/
+message SyncResponse {
+  repeated History history = 1;
+}
+
+/*
+ * Service for handling keeper features.
+ */
+service Keeper {
+    // Handler for doing user registration.
+    rpc SignUp(AuthDataRequest) returns (AuthTokenResponse);
+    // Handler for doing user authentification.
+    rpc SignIn(AuthDataRequest) returns (AuthTokenResponse);
+    // Handler for getting chest by id.
+    rpc GetChestByID(ChestIDRequest) returns (ChestResponse);
+    // Handler for adding chest data.
+    rpc AddChest(ChestRequest) returns (HistoryResponse);
+    // Handler for updating chest.
+    rpc UpdateChest(ChestRequest) returns (HistoryResponse);
+    // Handler for deleting chest.
+    rpc DeleteChest(DeleteChestRequest) returns (HistoryResponse);
+    // Handler for syncing history and data.
+    rpc Sync(SyncRequest) returns (SyncResponse);
+  }

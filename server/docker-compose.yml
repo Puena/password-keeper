@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  keeper-server:
+    build: ./
+    image: keeper-server:0.0.3
+    ports:
+     - "3030:3030"
+    environment:
+      - JWT_SECRET="some-secret"
+      - ADDRESS=localhost:3030
+      - POSTGRES_URI=postgres://postgres:test@db:5432/postgres?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: citusdata/citus
+    restart: always
+    user: postgres
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=test #for simplicity, use secret for sensivity info.
+    expose:
+      - "5432"
+    ports:
+      - "54320:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
