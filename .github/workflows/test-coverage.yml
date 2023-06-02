@@ -1,0 +1,51 @@
+name: Go package
+
+on:
+    push:
+        branches: [main] 
+    workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Debug
+        run: |
+          printenv
+          go env
+          cat go.mod
+          
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: generate test generate coverage
+        run: go test -v ./... -coverprofile=./cover.out
+    
+      - name: check test coverage
+        id: coverage ## this step must have id
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          profile: cover.out
+          local-prefix: github.com/Puena/test-actions-2
+          threshold-file: 80
+          threshold-package: 80
+          threshold-total: 80
+      
+      - name: make coverage badge
+        uses: action-badges/core@0.2.2
+        if: contains(github.ref, 'main')
+        with:
+          label: coverage
+          message: ${{ steps.coverage.outputs.badge-text }}
+          message-color: ${{ steps.coverage.outputs.badge-color }}
+          file-name: coverage.svg
+          badge-branch: badges ## orphan branch where badge will be committed
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
